@@ -148,6 +148,9 @@ def create_gaussian_kernel(n, sigma):
         A kernel 
     """
 
+    # TODO - change this so that the size is a function of the sigma
+    # value. They say that n = int(8*sigma+1) and if n % 2 n++
+
     # Check that n is of type int
     _check_type_supported(n)
 
