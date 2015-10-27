@@ -36,11 +36,13 @@ def test_convolve_vs_scipy():
 
     conv_arr = convolve(test_image, kernel)
 
-    # Checks that the array is equal within 6 decimal places due to small rounding errors
+    # Checks that the array is equal within 6 decimal places due to small 
+    # rounding errors
     assert_array_almost_equal(scipy_conv, conv_arr)
 
 def test_out_size_equal():
-    """Tests that the size of the output array is equal to the size of the input array"""
+    """Tests that the size of the output array is equal to the size of the 
+    input array"""
 
     expected = test_image.shape
 
@@ -48,7 +50,31 @@ def test_out_size_equal():
 
     assert_equal(actual = conv_arr.shape, desired = expected)
 
+def test_convolve_ndim():
+    """Tests whether convolve accepts 3 dimensional arrays and returns an
+    array of the same size as was input"""
 
+    test_image_3d = np.array([test_image,test_image])
+    test_image_3d = np.swapaxes(test_image_3d,0,2)
+    conv_arr_3d = convolve(test_image_3d, kernel)
+    assert conv_arr_3d.ndim == test_image_3d.ndim
 
-# if __name__ == "__main__":
-#     np.testing.run_module_suite()
+def test_convolve_ndim():
+    """Tests whether convolve accepts 3 dimensional arrays and returns the same
+    output twice as it should"""
+
+    test_image_3d = np.array([test_image.copy(),test_image.copy()])
+    test_image_3d = np.swapaxes(test_image_3d,0,2)
+    conv_arr_3d = convolve(test_image_3d, kernel)
+    conv_arr = convolve(test_image, kernel)
+
+    expected = np.array([conv_arr.copy(),conv_arr.copy()])
+    expected = np.swapaxes(expected,0,2)
+
+    assert_array_almost_equal(conv_arr_3d,expected)
+
+def test_convolve_4_dims():
+    """ Tests whether errors are thrown when given greater than 3 dimensions"""
+    test_image_4d = np.zeros((2,2,2,2))
+    assert_raises(ValueError, convolve, test_image_4d, kernel)
+
