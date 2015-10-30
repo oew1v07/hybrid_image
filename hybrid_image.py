@@ -126,16 +126,16 @@ def convolve(image, kernel):
     return out
 
 
-def create_gaussian_kernel(n, sigma):
+def create_gaussian_kernel(sigma, n = 'none'):
     """Creates Gaussian kernel of size n and standard deviation sigma.
     Mean of the gaussian is automatically set to 0
 
     Parameters
     ----------
-    n: int
-        The size of kernel to be created it will return an n x n array.
     sigma: int or float
         The standard deviation of the resulting gaussian kernel
+    n: int, optional (default: 'none')
+        The size of kernel to be created it will return an n x n array.
 
     Raises
     ------
@@ -148,14 +148,18 @@ def create_gaussian_kernel(n, sigma):
         A kernel 
     """
 
-    # TODO - change this so that the size is a function of the sigma
-    # value. They say that n = int(8*sigma+1) and if n % 2 n++
+    # Standard practice to make the size of the kernel a function of sigma
+    # value. It's also possible to set the size of the kernel if necessary but 
+    # by default it's none, in which case the following code is run.
+    if n == 'none':
+        n = int(8*sigma + 1)
+
+        # If n is even then add 1
+        if n % 2 == 0:
+            n += 1
 
     # Check that n is of type int
     _check_type_supported(n)
-
-    # Check that n is an odd size
-    _odd(n)
 
     # Define array kernel
     kernel = np.zeros((n, n))

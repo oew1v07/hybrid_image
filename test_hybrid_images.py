@@ -78,3 +78,15 @@ def test_convolve_4_dims():
     test_image_4d = np.zeros((2,2,2,2))
     assert_raises(ValueError, convolve, test_image_4d, kernel)
 
+def test_gaussian():
+    """ Tests the my gaussian function is almost equal to the book's gaussian.
+
+    The Gaussian given is taken from Feature Extraction and Image Processing"""
+    expected = np.array([[ 0.002,  0.013,  0.220,  0.013,  0.002],
+                         [ 0.013,  0.060,  0.098,  0.060,  0.013],
+                         [ 0.220,  0.098,  0.162,  0.098,  0.220],
+                         [ 0.013,  0.060,  0.098,  0.060,  0.013],
+                         [ 0.002,  0.013,  0.220,  0.013,  0.002]])
+
+    actual = create_gaussian_kernel(sigma, n = 5)
+    assert_array_almost_equal(actual, expected, decimal = 3)
