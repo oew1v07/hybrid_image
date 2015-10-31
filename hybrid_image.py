@@ -390,7 +390,7 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = 'none'):
     image: ndarray
         Image to be scaled
     n: int, optional (default: 4)
-        Number of images that is wanted in final image
+        Number of copies of image
     spacing: int, optional (default: 10)
         Number of pixels spacing is wanted between each image
     border: bool, optional (default: True)
