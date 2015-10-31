@@ -29,7 +29,7 @@
 \makeatother
 
 \fancyhead{}
-\lhead{COMP6229}
+\lhead{COMP6223}
 \rhead{Olivia Wilson: 22277935}
 \chead{oew1v07@soton.ac.uk}
 
@@ -38,11 +38,11 @@
 \setlength{\droptitle}{-6em}
 
 \lstset{frame=single,
-    language=Matlab,
+    language=python,
     basicstyle=\ttfamily,
     tabsize=4}
 
-\title{COMP 6229: Machine Learning Lab 2}
+\title{COMP 6223: Image Filtering and Hybrid Images}
 \predate{}
 \date{}
 \postdate{}
@@ -54,131 +54,120 @@
 \begin{document}
 \maketitle
 \thispagestyle{fancy}
-Figure~\ref{fig:contour} shows the effect of using the Gaussian probability density to work out the probability of each point and then subsetting them into contour lines of $0.1, 0.5$and $0.8$ times the maximum probability of any point (located at the mean). This is then overlaid onto the two bivariate distributions X1 and X2.
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[width = 0.45\textwidth]{contours2-crop.pdf}
-    \caption{Contours of $P_{max} * [0.1, 0.5, 0.8]$ plotted over two bivariate distributions X1 and X2 with means of [0 2] and [1.7 2.5] respectively.\label{fig:contour}}
-\end{figure}
 
-The Fisher linear discriminant is calculated for these two distributions, Figure~\ref{fig:fisher} shows the direction of the discriminant overlaid with the two distributions. Equation~\ref{eq:fisher} shows the fisher linear discriminant.
+\section{Convolved}
+Talk about how I implemented the convolve. I check for even and dimensions > 2
+in kernels and more than 3 dimensions in images.
 
-\begin{equation}\label{eq:fisher}
-wF = \left(\begin{pmatrix}
-2 & 1\\
-1 & 2
-\end{pmatrix} +
-\begin{pmatrix}
-2 & 1\\
-1 & 2
-\end{pmatrix}\right)^{-1}
-*\left(\begin{pmatrix}
-0 \\
-2
-\end{pmatrix} -
-\begin{pmatrix}
-1.7 \\
-2.5
-\end{pmatrix} \right)
-\qquad = \qquad \begin{pmatrix}
--0.4833 \\
-0.1167
-\end{pmatrix}
-\end{equation}
+I use the inbuilt option in fftn to pad the image and kernel with zeros.
 
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[width = 0.45\textwidth]{fisher_discrim_2-crop.pdf}
-    \caption{Scatter plot of two bi-variate distributions (200 points each) with aforementioned means and covariances The Fisher linear discriminant direction is shown in red.\label{fig:fisher}}
-\end{figure}
+To deal with 3 band images I use recursion to call convolve for each of the three
+bands separately and put them back together.
 
-The distributions are projected in the direction of the Fisher linear discriminant to show how the means are maximally seperated. The data is then shown in histogram form in Figure~\ref{fig:fisher_proj}. As can be seen the two means are very distinct and separated. The ROC curve in Figure~\ref{fig:ROC} shows the effect of varying the threshold on false positives and true positives which needs to be optimised. The straight line shown is the ROC curve resulting from a random choice of class for each point. Ideally a classifier would be above this line showing that it is much more likely to classify correctly than random choice.
+I used fft because it scales well for large kernels (which when sigma is as it is
+became a necessary feature). I then multiplied the two ffts, inversed and took
+their real part. Finally I remove the padding.
 
-The area under the ROC curve is an often used summary statistic that, when normalised, is equal to the probability that for any random drawn pair (where one is class one and the other class two) the classifier will correctly classify both. The value for this classifier is $0.8044$.
+Used TDD to then sanity check my code.
 
-For a number of values of \lstinline|threshold| between the maximum and minumum values of each projected distribution the percentage accuracy has been calculated. Figure~\ref{fig:thresh} shows how the percentage accuracy changes as a function of threshold. The maximum for this classifier is $76\%$ with a threshold value of $-0.1842$. In the context of the original calculation it would become a line in the original space as it would need to satisfy equation~\ref{eq:inv_fish}.
+\begin{lstlisting}
+def convolve(image, kernel):
+    """Convolves a kernel over an image using the fast fourier transform.
 
-\begin{equation}\label{eq:inv_fish}
-    \begin{pmatrix}
-    x_1 & x_2
-    \end{pmatrix} *
-    \begin{pmatrix}
-    -0.4833 \\
-    0.1167
-    \end{pmatrix} = -0.1842 \qquad \implies \qquad -0.4833x_1 + 0.1167x_2 + 0.1842 = 0
-\end{equation}
+    Parameters
+    ----------
+    image: ndarray (arbitrary shape,float or int type)
+        Image to be convolved over. It is expected that images will be of the
+        shape (x,y,z) where z is the number of bands (1 or 3)
+    kernel: ndarray
+        Kernel to convolve with of odd shape not necessarily square.
 
-The same analysis has been carried using different projections other than the Fisher linear discriminant. Figure~\ref{fig:proj_ROC} shows the corresponding ROC curves. The area under the curve for the random projection chosen, $(0.56~0.18)$, shown in Figure~\ref{fig:proj_random}, is $0.2463$, much worse than the Fisher discriminant. However for the projection in the direction connecting the two means, $(1.7~0.5)$ (shown in Figure~\ref{fig:proj_mean}), is $0.2145$, even worse than the random projection. I suspect that this direction is one of the worst projections. As can be seen by Figures~\ref{fig:proj_mean} and \ref{fig:proj_random} the ROC is under the diagonal line for each projection, meaning that both of these directions classify the data much worse than random choice would.
+    Raises
+    ------
+    TypeError
+        If the input kernel is of even shape in one or both dimensions.
 
-The same data has been classified using a range of classifiers including single nearest neighbour, distance to mean and mahalanobis. Comparing each of these we find that the accuracies are much less than the Fisher Discriminant analyser, although the nearest neighbour classifier could be improved by implementing a k-nearest neighbour classifier instead of using a single point, which would be more robust against noise in the data.
+    Returns
+    -------
+    out: ndarray, same shape as input `image`
+        The convolved image
+    """
 
-\begin{table}[!ht]
-\centering
-\begin{tabular}{l c}
-\hline
-\textbf{Classifier} & \textbf{Mean Percentage Accurate}\\
-\hline
-Fisher linear discriminant & 76.00\% \\
-Single Nearest Neighbour & 65.75\% \\
-Distance to mean & 71.50\% \\
-Mahalanobis distance & 70.50\%
-\end{tabular}
-\end{table}
+    # Check if size is odd then both rows and columns must be odd
+    _odd(kernel.size)
 
-Working with the same problem the posterior probability for class 1 ($\mathbf{m_1} = [0~2]$) was calculated over a meshgrid of $x$ and $y$ using the Bayes optimal classifier. This is expected to be a simple sigmoid and can be thought of as moving a line according to a threshold. As can be seen in Figure~\ref{fig:bayes_post} the surface model shows this is the case. A more complicated example where the covariances are not equal was also implemented. We expect the resulting posterior probability to have a complicated surface. The resulting equation for the surface is much more complicated than the $C_1 = C_2$ case and is shown in equation~\ref{eq:bayes_post} and Figure~\ref{fig:bayes_post_cdiff}.
+    # Check dimensions for kernel are two or fewer
+    _dim(kernel.ndim)
 
-\begin{align}
-P(\omega_1|\mathbf{x}) \quad &= \quad \frac{P(\mathbf{x}|\omega_1)P(\omega_1)}{P(\mathbf{x}|\omega_1)P(\omega_1) + P(\mathbf{x}|\omega_2)P(\omega_2)}\\
-\quad &= \quad \frac{1}{1+\frac{P(\mathbf{x}|\omega_2)P(\omega_2)}{P(\mathbf{x}|\omega_1)P(\omega_1)}} = \frac{1}{1 + \frac{P(x|\omega_2)}{P(x|\omega_1)}}\\
-\frac{P(\mathbf{x}|\omega_2)}{P(\mathbf{x}|\omega_1)} \quad &= \quad \frac{|C_1|^{\frac{1}{2}}}{|C_2|^{\frac{1}{2}}}\exp\left(\frac{1}{2}(\mathbf{x}-\mathbf{m_1})^TC_{1}^{-1}(\mathbf{x} -\mathbf{m_1}) - \frac{1}{2}(\mathbf{x}-\mathbf{m_2})^TC_{2}^{-1}(\mathbf{x} -\mathbf{m_2})\right) \\
-&= \quad \frac{|C_1|^ { \frac{1}{2} } } {|C_2|^ { \frac{1}{2} } }\text{exp}\left(\frac{1}{2} \Big(
-\mathbf{x}^TC_{1}^{-1}\mathbf{x} - 2\mathbf{m_1}^TC_{1}^{-1}\mathbf{x} + \mathbf{m_1}^TC_{1}^{-1}\mathbf{m_1} - \Big.\right.\\
-& \qquad\qquad\qquad\qquad~~ \bigg.\Big.\mathbf{x}^TC_{2}^{-1}\mathbf{x} + 2\mathbf{m_2}^TC_{2}^{-1}\mathbf{x} - \mathbf{m_2}^TC_{2}^{-1}\mathbf{m_2} \Big)\bigg)\\
-&= \quad \frac{|C_1|^ { \frac{1}{2} } } {|C_2|^ { \frac{1}{2} } }\text{exp}\left(\frac{1}{2} \Big((\mathbf{x}-2\mathbf{m_1})^TC_{1}^{-1}\mathbf{x} - (\mathbf{x}-2\mathbf{m_2})^TC_{2}^{-1}\mathbf{x} + \mathbf{m_1}^{T}C_{1}^{-1}\mathbf{m_1} - \mathbf{m_2}^{T}C_{2}^{-1}\mathbf{m_2}\Big)\right)\label{eq:bayes_post}
-\end{align}
+    # Check that any dimensions with a "single" column are squeezed for kernels
+    # or image
+    image = np.squeeze(image)
+    kernel = np.squeeze(kernel)
 
-\begin{figure}
-    \centering
-    \includegraphics[width = 0.45\textwidth]{fisher_proj-crop.pdf}
-    \caption{Histogram of projected values of X1 (Class 1) and X2 (Class 2) using the Fisher linear discriminant. This is shown on the same scale in each subplot to illustrate the separation of the means.\label{fig:fisher_proj}}
-\end{figure}
+    # Checks dimensionality of image for if we need to do colour convolving
+    if image.ndim > 2:
+        if image.ndim > 3:
+            raise ValueError("Image should have no more than 3 bands "
+                             "Got {number}.".format(number = image.ndim))
+        else:
+            # Create output array for multiple
+            output = np.zeros(image.shape)
 
-\begin{figure}
-    \centering
-    \includegraphics[width = 0.45\textwidth]{ROC_curve_fisher-crop.pdf}
-    \caption{The Receiver Operating Characteristic (ROC) Curve showing the trade-off between true positives and false positives. The line shown demonstrates the ROC for a random choice of class.\label{fig:ROC}}
-\end{figure}
+            for i in range(image.shape[2]): # Gets the number of 3d bands
+                image_it = image[:,:,i]
+                output[:, :, i] = convolve(image_it,kernel)
 
-\begin{figure}
-    \centering
-    \includegraphics[width = 0.45\textwidth]{acc_vs_thresh-crop.pdf}
-    \caption{A line graph showing percentage accurate of the classifier as a function of the threshold chosen. The dotted line shows the threshold for which has the maximum percentage correct.\label{fig:thresh}}
-\end{figure}
+            return output
 
-\begin{figure}
-    \centering
-    \begin{subfigure}[b]{0.45\textwidth}
-        \includegraphics[width = \textwidth]{ROC_curve_random-crop.pdf}
-        \caption{Data projected in the direction \\ $(0.56~0.18)$\label{fig:proj_random}}
-    \end{subfigure}
-    ~%add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
-    \begin{subfigure}[b]{0.45\textwidth}
-        \includegraphics[width = \textwidth]{ROC_curve_mean-crop.pdf}
-        \caption{Data projected in the direction of the means \\$(1.7~0.5)$\label{fig:proj_mean}}
-    \end{subfigure}
-\caption{Receiving Operating Characteristic curves for data projected in the specified directions\label{fig:proj_ROC}}
-\end{figure}
+    # Creates variable for later use to return original sized image
+    image_size = image.shape
 
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[width = 0.45\textwidth]{bayes_post-crop.pdf}
-    \caption{A surface plot of the posterior probability of class 1, varying over $x$ and $y$ for the classification problem where $C_1 = C_2$, $\mathbf{m_1} = [0~2]$ and $\mathbf{m_2} = [1.7~2.5]$\label{fig:bayes_post}}
-\end{figure}
+    # Creates variable of how many rows with which the image needs to be padded
+    pad_shape = np.array(image.shape) + int(np.floor(len(kernel)/2))*2
+    pad_shape = list(pad_shape)
 
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[width = 0.45\textwidth]{bayes_post_cdiff-crop.pdf}
-    \caption{A surface plot of the posterior probability of class 1, varying over $x$ and $y$ for the classification problem above with $C_2 = 1.5*$I.\label{fig:bayes_post_cdiff}}
-\end{figure}
+    # Calculate FFT for image: using the option to pad with zeros to the
+    # the necessary size
+    fft_image = fftpack.fftn(image, shape = pad_shape)
+
+    # Calculate FFT for kernel using the option to pad the kernel with zeros to
+    # make it the shape of the padded image.
+    fft_kernel = fftpack.fftn(kernel, shape = pad_shape)
+
+    # Multiply the fourier tranforms by element
+    fft_convolved = fft_image * fft_kernel
+
+    # Calculate the inverse fourier of the convolved image
+    convolved = np.fft.ifftn(fft_convolved)
+
+    # Calculate how much padding has been added by the fft
+    expanded = np.array(convolved.shape) - np.array(image_size)
+
+    # Padding by the fft is always equal on each side so taking half of the
+    # difference provides padding on each side.
+    pad = int((expanded/2)[0])
+
+    # Index the new array to get the central array without the padding
+    out = convolved[pad:-pad, pad:-pad]
+
+    # Take the real part of the convolved array
+    out = np.real(out)
+
+    return out
+\end{lstlisting}
+
+\section{Hybrid Images}
+How I did it, why and outputs. Implemented code to create the decreasing size
+visualisation. Animations of different sigmas. 
+
+\todo{do einstein Marilyn with lower sigma values for einstein.}
+
+\todo{README}
+
+\todo{License}
+
+\todo{command line running}
+
+\todo{Work out best image pairs}
 
 \end{document}

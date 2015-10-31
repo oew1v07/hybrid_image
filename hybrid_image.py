@@ -11,7 +11,8 @@ from scipy.ndimage.interpolation import zoom
 # A module to convolve over an image and carry out a hybrid image
 # Seperate the high pass and low pass and then put into the hybrid function
 # This creates an easy way of showing each step of the process.
-# The term cut-off frequency is to do with the sigma of the gaussian kernel.
+# The term cut-off frequency is to do with the sigma of the gaussian kernel,
+# which also determines kernel size unless told an n value explicitly.
 
 
 def _odd(number):
