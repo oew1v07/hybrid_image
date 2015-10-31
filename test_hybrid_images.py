@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_equal, assert_raises,
                            assert_array_almost_equal)
-from hybrid_image import convolve
+from hybrid_image import *
 import scipy.ndimage.filters as filt
 
 
@@ -88,5 +88,9 @@ def test_gaussian():
                          [ 0.013,  0.060,  0.098,  0.060,  0.013],
                          [ 0.002,  0.013,  0.220,  0.013,  0.002]])
 
-    actual = create_gaussian_kernel(sigma, n = 5)
+    actual = create_gaussian_kernel(sigma = 1, n = 5)
+
+    # to round down to n decimal places we have to multiply by 10^n take the
+    # floor and then divide again
+    actual = np.floor(actual*1000)/1000
     assert_array_almost_equal(actual, expected, decimal = 3)
