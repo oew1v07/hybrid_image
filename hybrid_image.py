@@ -16,7 +16,7 @@ from scipy.ndimage.interpolation import zoom
 
 
 def _odd(number):
-    """Raises an error if a number is odd"""
+    """Raises an error if a number isn't odd"""
     if number % 2 == 0:
         raise TypeError("Only odd sizes are supported. "
                         "Got {number}.".format(number = number))
@@ -136,7 +136,7 @@ def convolve(image, kernel):
 
     return out
 
-def create_gaussian_kernel(sigma, n = 'none'):
+def create_gaussian_kernel(sigma, n = None):
     """Creates Gaussian kernel of size n and standard deviation sigma.
     Mean of the gaussian is automatically set to 0
 
@@ -144,7 +144,7 @@ def create_gaussian_kernel(sigma, n = 'none'):
     ----------
     sigma: int or float
         The standard deviation of the resulting gaussian kernel
-    n: int, optional (default: 'none')
+    n: int, optional (default: None)
         The size of kernel to be created it will return an n x n array. This is
         for setting the size manually otherwise it will assume that n is a
         function of sigma.
@@ -163,7 +163,7 @@ def create_gaussian_kernel(sigma, n = 'none'):
     # Standard practice to make the size of the kernel a function of sigma
     # value. It's also possible to set the size of the kernel if necessary but
     # by default it's none, in which case the following code is run.
-    if n == 'none':
+    if n is None:
         n = int(8*sigma + 1)
 
         # If n is even then add 1
@@ -193,7 +193,7 @@ def create_gaussian_kernel(sigma, n = 'none'):
 
     return kernel
 
-def low_pass(image, sigma = 0.5, n = 'none'):
+def low_pass(image, sigma = 0.5, n = None):
     """Creates low pass image
 
     Uses a Gaussian kernel of size n and standard deviation sigma.
@@ -204,7 +204,7 @@ def low_pass(image, sigma = 0.5, n = 'none'):
         Image to have a low pass created.
     sigma: int or float, optional (default: 0.5)
         The standard deviation of the gaussian kernel
-    n: int, optional (default: 'none')
+    n: int, optional (default: None)
         n is the size of gaussian kernel to set the size manually if wanted.
 
     Raises
@@ -224,7 +224,7 @@ def low_pass(image, sigma = 0.5, n = 'none'):
     out = convolve(image, kernel)
     return out
 
-def high_pass(image, sigma = 0.5, n = 'none'):
+def high_pass(image, sigma = 0.5, n = None):
     """Creates high pass image
 
     Uses a Gaussian kernel of size n and standard deviation sigma. A low pass
@@ -237,7 +237,7 @@ def high_pass(image, sigma = 0.5, n = 'none'):
         Image to have a high pass created.
     sigma: int or float, optional (default: 0.5)
         The standard deviation of the gaussian kernel
-    n: int, optional (default: 'none')
+    n: int, optional (default: None)
         n is the size of gaussian kernel to set the size manually if wanted.
 
     Raises
@@ -301,7 +301,7 @@ def show_image(image):
         plt.imshow(image.astype(np.uint8))
 
 def run_hybrid(image1, image2, sigmas = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
-              n = 'none',save_intermediate = True):
+              n = None,save_intermediate = True):
     """Takes two images from reading them to creating hybrid image of them
 
     Parameters
@@ -313,7 +313,7 @@ def run_hybrid(image1, image2, sigmas = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
     sigmas: list, optional (default: [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5])
         List of different sigmas to try. Trial and error found that sigma values
         of less than 2.5 did not have enough effect on the images.
-    n: int, optional (default: 'none')
+    n: int, optional (default: None)
         n is the size of gaussian kernel to set the size manually if wanted.
     save_intermediate: bool, optional (default: True)
         A marker to save all high and low pass images as well as the resulting
@@ -383,7 +383,7 @@ def run_hybrid(image1, image2, sigmas = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
 
             misc.imsave(hybrid_name, hybrid_image)
 
-def scale_n_images(image, n = 4, spacing = 10, border = True, name = 'none'):
+def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
     """Creates a series of scaled versions of image each decreased by a half
 
     Parameters
@@ -396,7 +396,7 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = 'none'):
         Number of pixels spacing is wanted between each image
     border: bool, optional (default: True)
         Whether a border of zeros is wanted all around the output image
-    name: string, optional (default: 'none')
+    name: string, optional (default: None)
         Name of file if an exported image is required.
 
     Returns
@@ -452,7 +452,9 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = 'none'):
             if canvas.shape == zoomed.shape:
                 arr[top:bottom, left:right, :] = zoomed
             else:
-                print("I didn't put the image into the array that time")
+                raise ValueError("The zoomed image is not the same size as the "
+                                "array slice. Got {}, expected "
+                                "{}.".format(zoomed.shape, canvas.shape))
         else:
             zoomed = zoom(image, [sizes[i],sizes[i]])
             arr[top:bottom, left:right] = zoomed
@@ -460,12 +462,17 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = 'none'):
             if canvas.shape == zoomed.shape:
                 arr[top:bottom, left:right, :] = zoomed
             else:
-                print("I didn't put the image into the array that time")
+                raise ValueError("The zoomed image is not the same size as the "
+                                "array slice. Got {}, expected "
+                                "{}.".format(zoomed.shape, canvas.shape))
 
         left = right + spacing
 
-    if name != 'none':
+    if name is not None:
         name = name + '.png'
         misc.imsave(name, arr)
 
     return arr
+
+if __name__ == '__main__':
+    main()
