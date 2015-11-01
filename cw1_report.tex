@@ -51,8 +51,6 @@
     identifierstyle=\color{cblue},
     commentstyle=\color{cgreen}}
 
-% work out what word wrap I need.
-
 \title{COMP 6223: Image Filtering and Hybrid Images}
 \predate{}
 \date{}
@@ -66,30 +64,103 @@
 \maketitle
 \thispagestyle{fancy}
 
-\section{Convolved}
-Talk about how I implemented the convolve. I check for even and dimensions > 2
-in kernels and more than 3 dimensions in images.
+\section{Implementation Style}
+In implementing this algorithm, I used test driven development to test the code
+thoroughly whilst developing it, as well as to ensure continued development did
+not break previous developments. Not all functions are tested, only ones that
+are key to the running of the script. This is why there are many tests on the
+convolve function, which then feeds into other functions. I have also ensured
+that all my inputs are sanitised because it is better to fail fast, than continue
+and create less detectable errors. The following things are all checked: kernels
+must be odd and 2 dimensional, type checking for all inputs, images must either
+be 1 or 3 dimensions. Finally I also used the conventions of python writing in
+a style called PEP8 for readability and reproducibility.
 
-I use the inbuilt option in fftn to pad the image and kernel with zeros.
+\section{Convolve Implemetation}
+For my implementation of the convolve function see section~\ref{lst:convolve}, I
+decided to use the fast fourier transform (FFT), this is for it's scalability
+for larger kernel sizes. In some of the examples $\sigma$ can increase to values
+of 5 or 6 which results in very large kernel sizes, needing the speed of the
+fast fourier transform.
 
-To deal with 3 band images I use recursion to call convolve for each of the three
-bands separately and put them back together.
+To begin, I calculate the size to which the image should be padded to add a border of
+zeros, which is the floor of half the kernel size. To do this the inbuilt option
+for the fast fourier transform \lstinline|fftn| is used to pad with constant
+values (defaults to zero), for both the image and the kernel. This ensures that
+image and kernel are the same shape to then multiply later. To deal with 3 band
+images I use recursion to call convolve for each of the three bands separately
+and then after convolve has run put them back together manually. After
+calculating the FFT I then multiplied the image FFT and the kernel FFT
+elementwise, calculated the inverse FFT and took their real part. Finally the
+padding is removed to provide an image the same size as the original.
 
-I used fft because it scales well for large kernels (which when sigma is as it is
-became a necessary feature). I then multiplied the two ffts, inversed and took
-their real part. Finally I remove the padding.
+\section{Hybrid Images}
+For the hybrid images implementation I chose to write a number of seperate
+functions which are able to produce their own intermediate steps which could be
+saved if necessary. Hence, low_pass calls convolve and create_gaussian_kernel,
+high_pass calls low_pass and finally all the separate functions are joined by
+run_hybrid. Run_hybrid also has the option to iterate over a number of different
+$\sigma$'s to save time when the output needs checking for the optimal
+configuration.
 
-Used TDD to then sanity check my code.
+I went into more depth looking at the cut-off frequency and the effect it has
+on the images. Obviously the results from this is qualitative but nonetheless
+interesting to study. In particular I started with the cat and dog combination
+to test the model due to prior knowledge of the outcome. Initially the $\sigma$'s
+varied from 0.5 to 3.5 but on further inspection of the resulting images did not
+reflect the picture shown in the specification or Figure~\ref{fig:dog_cat}.
+Increasing the $\sigma$ range to 6.5 helped to find a suitable hybrid image.
+However going back to the other image pairs I found that none of these needed
+such a high sigma value as that pair, which is why I have a range of $\sigma$'s
+that go from 1 to 4.5. Anything below 1 tends to not have changed either image
+enough to be considered as a hybrid, and above 4.5 was only needed for the cat
+dog pairing.
 
-\begin{lstlisting}
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width = 0.45\textwidth]{dog_cat_35_60.png}
+    \caption{Hybrid Image of a cat (high pass image) and dog (low pass image)
+             with $\sigma$'s of 6 and 3.5 respectively. \label{fig:dog_cat}}
+\end{figure}
+
+\begin{figure}[ht!]
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{cat_high_pass_sigma_6.png}
+        \caption{High pass image of cat.bmp $\sigma = 6$\label{fig:high_cat}}
+    \end{subfigure}
+    ~%add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{dog_low_pass_sigma_3.5.png}
+        \caption{Low pass image of dog.bmp $\sigma = 3.5$\label{fig:low_dog}}
+    \end{subfigure}
+\caption{Intermediate steps for  \label{Figure:fig_hist_bi_rand}}
+\end{figure}
+
+How I did it, why and outputs. Implemented code to create the decreasing size
+visualisation. Animations of different sigmas.
+
+\todo{do einstein Marilyn with lower sigma values for einstein.}
+
+\todo{README}
+
+\todo{License}
+
+\todo{command line running}
+
+\todo{Work out best image pairs}
+
+\section{Appendix}
+
+\begin{lstlisting}[caption = , label = lst:convolve]
 def convolve(image, kernel):
     """Convolves a kernel over an image using the fast fourier transform.
 
     Parameters
     ----------
     image: ndarray (arbitrary shape,float or int type)
-        Image to be convolved over. It is expected that images will be of the
-        shape (x,y,z) where z is the number of bands (1 or 3)
+        Image to be convolved over. It is expected that images will be of
+        the shape (x,y,z) where z is the number of bands (1 or 3)
     kernel: ndarray
         Kernel to convolve with of odd shape not necessarily square.
 
@@ -110,12 +181,13 @@ def convolve(image, kernel):
     # Check dimensions for kernel are two or fewer
     _dim(kernel.ndim)
 
-    # Check that any dimensions with a "single" column are squeezed for kernels
-    # or image
+    # Check that any dimensions with a "single" column are squeezed for
+    # kernels or image
     image = np.squeeze(image)
     kernel = np.squeeze(kernel)
 
-    # Checks dimensionality of image for if we need to do colour convolving
+    # Checks dimensionality of image for if we need to do colour
+    # convolving
     if image.ndim > 2:
         if image.ndim > 3:
             raise ValueError("Image should have no more than 3 bands "
@@ -133,7 +205,8 @@ def convolve(image, kernel):
     # Creates variable for later use to return original sized image
     image_size = image.shape
 
-    # Creates variable of how many rows with which the image needs to be padded
+    # Creates variable of how many rows with which the image needs to be
+    # padded
     pad_shape = np.array(image.shape) + int(np.floor(len(kernel)/2))*2
     pad_shape = list(pad_shape)
 
@@ -141,8 +214,8 @@ def convolve(image, kernel):
     # the necessary size
     fft_image = fftpack.fftn(image, shape = pad_shape)
 
-    # Calculate FFT for kernel using the option to pad the kernel with zeros to
-    # make it the shape of the padded image.
+    # Calculate FFT for kernel using the option to pad the kernel with
+    # zeros to make it the shape of the padded image.
     fft_kernel = fftpack.fftn(kernel, shape = pad_shape)
 
     # Multiply the fourier tranforms by element
@@ -154,8 +227,8 @@ def convolve(image, kernel):
     # Calculate how much padding has been added by the fft
     expanded = np.array(convolved.shape) - np.array(image_size)
 
-    # Padding by the fft is always equal on each side so taking half of the
-    # difference provides padding on each side.
+    # Padding by the fft is always equal on each side so taking half of
+    # the difference provides padding on each side.
     pad = int((expanded/2)[0])
 
     # Index the new array to get the central array without the padding
@@ -166,19 +239,5 @@ def convolve(image, kernel):
 
     return out
 \end{lstlisting}
-
-\section{Hybrid Images}
-How I did it, why and outputs. Implemented code to create the decreasing size
-visualisation. Animations of different sigmas.
-
-\todo{do einstein Marilyn with lower sigma values for einstein.}
-
-\todo{README}
-
-\todo{License}
-
-\todo{command line running}
-
-\todo{Work out best image pairs}
 
 \end{document}

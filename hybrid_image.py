@@ -27,10 +27,11 @@ def _dim(number):
         raise TypeError("Only dimensions of 2 or fewer are allowed. "
                         "Got {number}.".format(number = number))
 
-def _check_type_supported(n):
-    if not (np.issubdtype(type(n), np.integer)):
-        raise TypeError("Only integer types are supported. "
-                        "Got %s." % type(n))
+def _check_type(ar, data_type):
+    """Raises an error if ar is not of the type given"""
+    if not type(ar) == data_type:
+        raise TypeError("Only {} types are supported. Got {}.".format(data_type,
+                                                                      type(ar)))
 
 def image_to_array(image):
     """Reads in image and turns values into a numpy array
@@ -40,6 +41,11 @@ def image_to_array(image):
     image: string (filepath to image)
         Image to be read in and put into array. It can be of shape (x,y,z)
         where x and y are any size and z is the number of bands (1 or 3)
+
+    Raises
+    ------
+    OSError: cannot identify image file
+        If the file given is not a readable image type
 
     Returns
     -------
@@ -171,7 +177,7 @@ def create_gaussian_kernel(sigma, n = None):
             n += 1
 
     # Check that n is of type int
-    _check_type_supported(n)
+    _check_type(n, int)
 
     # Define array kernel
     kernel = np.zeros((n, n))
@@ -330,6 +336,19 @@ def run_hybrid(image1, image2, sigmas = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
         The hybrid image
     """
 
+    # Check that image paths exist
+    if exists(image1) == False:
+        raise RuntimeError("That file does not exist")
+    elif exists(image2) == False:
+        raise RuntimeError("That file does not exist")
+
+    # Check that n is None or int
+    if n is not None:
+        _check_type(n, int)
+
+    # Check save_intermediate is boolean
+    _check_type(save_intermediate, bool)
+
     # Getting names from the filepaths
     [x,y] = split(image1)
     name1 = splitext(y)[0]
@@ -388,14 +407,15 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
 
     Parameters
     ----------
-    image: ndarray
-        Image to be scaled
+    image: ndarray or string
+        Image to be scaled either as an ndarray or a filepath leading to the File
+        to be scaled.
     n: int, optional (default: 4)
         Number of copies of image
     spacing: int, optional (default: 10)
         Number of pixels spacing is wanted between each image
     border: bool, optional (default: True)
-        Whether a border of zeros is wanted all around the output image
+        Whether a white border is wanted all around the output image
     name: string, optional (default: None)
         Name of file if an exported image is required.
 
@@ -405,6 +425,22 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
         An image of n versions of the original each half the size of the former
         image, with spacing in between.
     """
+
+    if type(image) == str:
+        # Check that image paths exist
+        if exists(image) == False:
+            raise RuntimeError("That file does not exist")
+        else:
+            image = imread(image)
+
+    # Check that n is int
+    _check_type(n, int)
+
+    # Check spacing is int
+    _check_type(spacing, int)
+
+    # Check border is boolean
+    _check_type(border, bool)
 
     # Make variables for original size to be used later
     orig_height = image.shape[0]
@@ -475,4 +511,12 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
     return arr
 
 if __name__ == '__main__':
-    main()
+    # if the command line only has two arguments then cannot run as only one
+    # image
+    if len(sys.argv) == 2:
+        raise RuntimeError("You have not provided enough arguments to run this"
+                           " script, two image filepaths are needed")
+    # if the commange line has three arguments then only images have been
+    # provided
+    if len(sys.argv) == 3:
+        pass
