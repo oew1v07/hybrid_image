@@ -69,7 +69,7 @@ def convolve(image, kernel):
 
     Raises
     ------
-    TypeError
+    ValueError
         If the input kernel is of even shape in one or both dimensions.
 
     Returns
@@ -306,7 +306,7 @@ def show_image(image):
     else:
         plt.imshow(image.astype(np.uint8))
 
-def run_hybrid(image1, image2, sigmas = [3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
+def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
               n = None,save_intermediate = True):
     """Takes two images from reading them to creating hybrid image of them
 
@@ -519,4 +519,3 @@ if __name__ == '__main__':
     # if the commange line has three arguments then only images have been
     # provided
     if len(sys.argv) == 3:
-        pass
