@@ -381,7 +381,7 @@ def run_hybrid(image1, image2, sigmas = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5],
         low = low_pass(image1, sigma = low_sigma, n = n)
 
         if save_intermediate:
-            low_name = name1 + '_low_pass_sigma_' + str(low_sigma*10) + '.png'
+            low_name = name1 + '_low_pass_sigma_' + str(round(low_sigma*10)) + '.png'
             low_name = join(name, low_name)
             # Save low pass image
             misc.imsave(low_name, low)
@@ -391,7 +391,7 @@ def run_hybrid(image1, image2, sigmas = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5],
             high = high_pass(image2, sigma = high_sigma, n = n)
 
             if save_intermediate:
-                high_name = name2 + '_high_pass_sigma_' + str(high_sigma*10) + '.png'
+                high_name = name2 + '_high_pass_sigma_' + str(round(high_sigma*10)) + '.png'
                 high_name = join(name, high_name)
                 # Visualise the high pass better by adding 0.5
                 new_high = high.copy()
@@ -401,7 +401,7 @@ def run_hybrid(image1, image2, sigmas = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5],
 
             hybrid_image = hybrid(low, high)
 
-            hybrid_name = name1 + '_' + name2 + '_sigma_' + str(low_sigma*10) + '_' + str(high_sigma*10) + '.png'
+            hybrid_name = name1 + '_' + name2 + '_sigma_' + str(round(low_sigma*10)) + '_' + str(round(high_sigma*10)) + '.png'
             hybrid_name = join(name, hybrid_name)
 
             misc.imsave(hybrid_name, hybrid_image)
