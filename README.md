@@ -51,3 +51,9 @@ Ran 6 tests in 5.598s
 
 FAILED (failures=1)
 ```
+* Otherwise it will come back saying
+```
+Ran 5 tests in 6.082s
+
+OK
+```
