@@ -517,10 +517,12 @@ def scale_n_images(image, n = 4, spacing = 10, name = None):
     return arr
 
 if __name__ == '__main__':
-    # if the commange line has three arguments then only images have been
+    # if the commange line has three arguments then the images have been
     # provided
     if len(sys.argv) == 3:
-        pass
+        image1 = sys.argv[1]
+        image2 = sys.argv[2]
+        run_hybrid(image1, image2)
     else:
         print("Usage: python hybrid_image.py image1 image2")
         sys.exit()

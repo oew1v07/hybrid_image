@@ -78,7 +78,7 @@ I have also ensured that all my inputs are sanitised because it is better to
 `fail fast',rather than continue and create less easily detectable errors.
 Checks include: kernels must be odd and 2 dimensional, type checking for all
 inputs, images must either be 1 or 3 dimensions. I followed standard Python
-programming style known as PEP8(\url{https://www.python.org/dev/peps/pep-0008/})
+programming style known as PEP8 (\url{https://www.python.org/dev/peps/pep-0008/})
 for readability and reproducibility.
 
 Finally, Doc strings which are
@@ -113,7 +113,8 @@ saved if necessary. Hence, \lstinline|low_pass| calls \lstinline|convolve| and
 and finally all the separate functions are combined by \lstinline|run_hybrid|.
 \lstinline|run_hybrid| also has the option to iterate over a number of different
 $\sigma$'s to save time when the output needs checking for the optimal
-configuration.
+configuration. I also implemented a function to create custom visualations of
+decreasing size to aid the reader in viewing the different hybrid images.
 
 I investigated the cut-off frequency and the effect it has on the images in more
 depth. The results from this are qualitative but nonetheless
@@ -127,11 +128,13 @@ have been unfeasible for a loop-based convolve function.
 
 % Put benchmark here?
 Further investigations found that none of the other images needed
-such a high sigma value as that pair (see Figure~\ref{fig:high_low}), which is
+such a high sigma value as that pair (see Figure~\ref{fig:intermediate}), which is
 why I have a range of $\sigma$'s
 that go from 1 to 4.5. Anything below 1 tends to not have changed either image
 enough to be considered as a hybrid, and above 4.5 was only needed for the cat
-dog pairing. With Einstein and Marilyn (Figure~\ref{fig:einstein_marilyn}), if
+dog pairing (this effect can be seen at \url{http://tinyurl.com/popet6u} and
+\url{http://tinyurl.com/nhklk7d}). With Einstein and Marilyn
+(Figure~\ref{fig:einstein_marilyn}), if
 the high pass Marilyn had $\sigma > 2.5$ then there was, `too much
 Marilyn' when viewing a small image (when Einstein should be more visible).
 Discovering this I found the easiest way to search for a good hybrid was to
@@ -142,9 +145,9 @@ The other impact on clarity of hybrid image is the order in which the hybrid is
 created. The low pass image has to be something that will not overpower the
 entire image. A good example of this is the combination of bicycle and motorcycle.
 With motorcycle as the low pass image, too much of the orange colour overpowers
-the image of the bicycle (seen in Figure REF HERE, the best hybrid I could find).
-Whereas with the motorcycle as the high pass image, the hybrid comes through
-clearly (as shown in Figure REF HERE).
+the image of the bicycle (seen in Figure \ref{fig:moto_bike}, the best hybrid I
+could find). Whereas with the motorcycle as the high pass image, the hybrid
+comes through clearly (as shown in Figure \ref{fig:bike_moto}).
 
 \begin{figure}[ht!]
     \centering
@@ -156,8 +159,9 @@ clearly (as shown in Figure REF HERE).
 \begin{figure}[ht!]
     \centering
     \includegraphics[width = 0.8\textwidth]{einstein_marilyn_30_10.png}
-    \caption{Hybrid Image of a Marilyn Monroe (high pass image) and Albert Einstein (low pass image)
-             with $\sigma$ of 1 and 3 respectively. \label{fig:einstein_marilyn}}
+    \caption{Hybrid Image of a Marilyn Monroe (high pass image) and Albert
+             Einstein (low pass image) with $\sigma$ of 1 and 3 respectively.
+             \label{fig:einstein_marilyn}}
 \end{figure}
 
 \begin{figure}[ht!]
@@ -181,21 +185,25 @@ clearly (as shown in Figure REF HERE).
     \end{subfigure}
 \caption{Intermediate steps for the hybrid images. Animated gifs of the
          varying effect of the high and low pass filters on images can be found
-         at REF HERE  \label{fig:intermediate}}
+         at \url{http://tinyurl.com/popet6u} and
+         \url{http://tinyurl.com/nhklk7d})  \label{fig:intermediate}}
 \end{figure}
 
-Implemented code to create the decreasing size
-visualisation. Animations of different sigmas.
-
-motorcycle/bike vs bike/motorcycle
-
-\todo{README}
-
-\todo{License}
-
-\todo{command line running}
-
-\todo{Work out best image pairs}
+\begin{figure}[ht!]
+    \centering
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{motorcycle_bicycle_40_25.png}
+        \caption{motorcycle: $\sigma = 4$ and bicycle: $\sigma = 2.5$
+                 \label{fig:moto_bike}}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{bicycle_motorcycle_30_35.png}
+        \caption{bicycle: $\sigma = 3$ and motorcycle: $\sigma = 3.5$
+                 \label{fig:bike_moto}}
+    \end{subfigure}
+\caption{Hybrid Image of a motorcycle and bicycle each as high and low pass
+         \label{fig:order_pass}}
+\end{figure}
 
 \newpage
 \section{Appendix}
