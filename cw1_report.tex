@@ -18,6 +18,7 @@
 \usepackage{hyperref}
 \usepackage{natbib}
 \usepackage{subcaption}
+\usepackage{textcomp}
 
 
 \usepackage{fancyhdr}
@@ -83,8 +84,8 @@ for readability and reproducibility.
 Finally, Doc strings which are
 integrated into the Python interpreter have also been used as a reminder. This
 script can also be run from the command line using the by running the following
-command \lstinline|python 'dog.bmp' 'cat.bmp' sigma| with the first and second
-arguments as the low pass  and high pass image respectively.
+command \lstinline|python hybrid_image.py dog.bmp cat.bmp| with the
+first and second arguments as the low pass  and high pass image respectively.
 
 \section{Convolve Implemetation}
 For my implementation of the convolve function see section~\ref{lst:convolve}. I
@@ -126,7 +127,8 @@ have been unfeasible for a loop-based convolve function.
 
 % Put benchmark here?
 Further investigations found that none of the other images needed
-such a high sigma value as that pair, which is why I have a range of $\sigma$'s
+such a high sigma value as that pair (see Figure~\ref{fig:high_low}), which is
+why I have a range of $\sigma$'s
 that go from 1 to 4.5. Anything below 1 tends to not have changed either image
 enough to be considered as a hybrid, and above 4.5 was only needed for the cat
 dog pairing. With Einstein and Marilyn (Figure~\ref{fig:einstein_marilyn}), if
@@ -158,19 +160,29 @@ clearly (as shown in Figure REF HERE).
              with $\sigma$ of 1 and 3 respectively. \label{fig:einstein_marilyn}}
 \end{figure}
 
-% \begin{figure}[ht!]
-%     \centering
-%     \begin{subfigure}[b]{0.3\textwidth}
-%         \includegraphics[width=\textwidth]{cat_high_pass_sigma_60.png}
-%         \caption{High pass image of cat.bmp $\sigma = 6$\label{fig:high_cat}}
-%     \end{subfigure}
-%     ~%add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
-%     \begin{subfigure}[b]{0.3\textwidth}
-%         \includegraphics[width=\textwidth]{dog_low_pass_sigma_35.png}
-%         \caption{Low pass image of dog.bmp $\sigma = 3.5$\label{fig:low_dog}}
-%     \end{subfigure}
-% \caption{Intermediate steps for the cat dog hybrid image. \label{fig:intermediate}}
-% \end{figure}
+\begin{figure}[ht!]
+    \centering
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{marilyn_high_pass_sigma_10.png}
+        \caption{$\sigma = 1$\label{fig:high_marilyn}}
+    \end{subfigure}
+    ~%add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{einstein_low_pass_sigma_30.png}
+        \caption{$\sigma = 3$\label{fig:low_einstein}}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{cat_high_pass_sigma_60.png}
+        \caption{$\sigma = 6$\label{fig:high_cat}}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{dog_low_pass_sigma_35.png}
+        \caption{$\sigma = 3.5$\label{fig:low_dog}}
+    \end{subfigure}
+\caption{Intermediate steps for the hybrid images. Animated gifs of the
+         varying effect of the high and low pass filters on images can be found
+         at REF HERE  \label{fig:intermediate}}
+\end{figure}
 
 Implemented code to create the decreasing size
 visualisation. Animations of different sigmas.
@@ -188,92 +200,6 @@ motorcycle/bike vs bike/motorcycle
 \newpage
 \section{Appendix}
 
-\begin{lstlisting}[caption = , label = lst:convolve]
-def convolve(image, kernel):
-    """Convolves a kernel over an image using the fast fourier transform.
-
-    Parameters
-    ----------
-    image: ndarray (arbitrary shape,float or int type)
-        Image to be convolved over. It is expected that images will be of
-        the shape (x,y,z) where z is the number of bands (1 or 3)
-    kernel: ndarray
-        Kernel to convolve with of odd shape not necessarily square.
-
-    Raises
-    ------
-    ValueError
-        If the input kernel is of even shape in one or both dimensions.
-
-    Returns
-    -------
-    out: ndarray, same shape as input `image`
-        The convolved image
-    """
-
-    # Check if size is odd then both rows and columns must be odd
-    _odd(kernel.size)
-
-    # Check dimensions for kernel are two or fewer
-    _dim(kernel.ndim)
-
-    # Check that any dimensions with a "single" column are squeezed for
-    # kernels or image
-    image = np.squeeze(image)
-    kernel = np.squeeze(kernel)
-
-    # Checks dimensionality of image for if we need to do colour
-    # convolving
-    if image.ndim > 2:
-        if image.ndim > 3:
-            raise ValueError("Image should have no more than 3 bands "
-                             "Got {number}.".format(number = image.ndim))
-        else:
-            # Create output array for multiple
-            output = np.zeros(image.shape)
-
-            for i in range(image.shape[2]): # Gets the number of 3d bands
-                image_it = image[:,:,i]
-                output[:, :, i] = convolve(image_it,kernel)
-
-            return output
-
-    # Creates variable for later use to return original sized image
-    image_size = image.shape
-
-    # Creates variable of how many rows with which the image needs to be
-    # padded
-    pad_shape = np.array(image.shape) + int(np.floor(len(kernel)/2))*2
-    pad_shape = list(pad_shape)
-
-    # Calculate FFT for image: using the option to pad with zeros to the
-    # the necessary size
-    fft_image = fftpack.fftn(image, shape = pad_shape)
-
-    # Calculate FFT for kernel using the option to pad the kernel with
-    # zeros to make it the shape of the padded image.
-    fft_kernel = fftpack.fftn(kernel, shape = pad_shape)
-
-    # Multiply the fourier tranforms by element
-    fft_convolved = fft_image * fft_kernel
-
-    # Calculate the inverse fourier of the convolved image
-    convolved = np.fft.ifftn(fft_convolved)
-
-    # Calculate how much padding has been added by the fft
-    expanded = np.array(convolved.shape) - np.array(image_size)
-
-    # Padding by the fft is always equal on each side so taking half of
-    # the difference provides padding on each side.
-    pad = int((expanded/2)[0])
-
-    # Index the new array to get the central array without the padding
-    out = convolved[pad:-pad, pad:-pad]
-
-    # Take the real part of the convolved array
-    out = np.real(out)
-
-    return out
-\end{lstlisting}
+\lstinputlisting[caption = {Code for the \lstinline|convolve| function \label{lst:convolve}}, firstline = 58, lastline = 141]{hybrid_image.py}
 
 \end{document}

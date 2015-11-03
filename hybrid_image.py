@@ -1,3 +1,9 @@
+"""Hybrid Images Algorithm written for COMP6223 at University of Southampton
+
+A hybrid image is an image which can be viewed in two ways as a function of the
+distance from it. This module takes two images and creates a hybrid from them
+using high and low pass filtering to gain the desired effect."""
+
 import numpy as np
 from numpy.fft import fft2, ifft2, fftshift
 from skimage.io import imread, imsave
@@ -7,13 +13,7 @@ from numpy.testing import assert_array_equal
 from os.path import split, splitext, join, exists
 from os import mkdir
 from scipy.ndimage.interpolation import zoom
-
-# A module to convolve over an image and carry out a hybrid image
-# Seperate the high pass and low pass and then put into the hybrid function
-# This creates an easy way of showing each step of the process.
-# The term cut-off frequency is to do with the sigma of the gaussian kernel,
-# which also determines kernel size unless told an n value explicitly.
-
+import sys
 
 def _odd(number):
     """Raises an error if a number isn't odd"""
@@ -62,10 +62,10 @@ def convolve(image, kernel):
     Parameters
     ----------
     image: ndarray (arbitrary shape,float or int type)
-        Image to be convolved over. It is expected that images will be of the
-        shape (x,y,z) where z is the number of bands (1 or 3)
+        Image to be convolved over. It is expected that images will be of
+        the shape (x,y,z) where z is the number of bands (1 or 3)
     kernel: ndarray
-        Kernel to convolve with of odd shape not necessarily square.
+        Kernel to convolve with (odd shape not necessarily square).
 
     Raises
     ------
@@ -84,12 +84,13 @@ def convolve(image, kernel):
     # Check dimensions for kernel are two or fewer
     _dim(kernel.ndim)
 
-    # Check that any dimensions with a "single" column are squeezed for kernels
-    # or image
+    # Check that any dimensions with a "single" column are squeezed for
+    # kernels or image
     image = np.squeeze(image)
     kernel = np.squeeze(kernel)
 
-    # Checks dimensionality of image for if we need to do colour convolving
+    # Checks dimensionality of image for if we need to do colour
+    # convolving
     if image.ndim > 2:
         if image.ndim > 3:
             raise ValueError("Image should have no more than 3 bands "
@@ -107,7 +108,8 @@ def convolve(image, kernel):
     # Creates variable for later use to return original sized image
     image_size = image.shape
 
-    # Creates variable of how many rows with which the image needs to be padded
+    # Creates variable of how many rows with which the image needs to be
+    # padded
     pad_shape = np.array(image.shape) + int(np.floor(len(kernel)/2))*2
     pad_shape = list(pad_shape)
 
@@ -115,23 +117,22 @@ def convolve(image, kernel):
     # the necessary size
     fft_image = fftpack.fftn(image, shape = pad_shape)
 
-    # Calculate FFT for kernel using the option to pad the kernel with zeros to
-    # make it the shape of the padded image.
+    # Calculate FFT for kernel using the option to pad the kernel with
+    # zeros to make it the shape of the padded image.
     fft_kernel = fftpack.fftn(kernel, shape = pad_shape)
 
-    # Multiply the fourier tranforms by element
+    # Multiply the fourier tranforms elementwise
     fft_convolved = fft_image * fft_kernel
 
-    # Calculate the inverse fourier of the convolved image, cropping the image
-    # to the original image size.
+    # Calculate the inverse fourier of the convolved image, cropping the
+    # image to the original image size.
     convolved = np.fft.ifftn(fft_convolved)
 
-    # Do I need to remove padding at end - ask Jonathan Hare
     # Calculate how much padding has been added by the fft
     expanded = np.array(convolved.shape) - np.array(image_size)
 
-    # Padding by the fft is always equal on each side so taking half of the
-    # difference provides padding on each side.
+    # Padding by the fft is always equal on each side so taking half of
+    # the difference provides padding on each side.
     pad = int((expanded/2)[0])
 
     # Index the new array to get the central array without the padding
@@ -282,7 +283,7 @@ def hybrid(image_1, image_2):
     return out
 
 def show_image(image):
-    """A custom imshow, for outputs of float type need to be shown as uint8.
+    """A custom imshow, takes outputs of float type shows them as uint8.
 
     Parameters
     ----------
@@ -306,9 +307,9 @@ def show_image(image):
     else:
         plt.imshow(image.astype(np.uint8))
 
-def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
-              n = None,save_intermediate = True):
-    """Takes two images from reading them to creating hybrid image of them
+def run_hybrid(image1, image2, sigmas = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5],
+               n = None,save_intermediate = True):
+    """Creates hybrid image from two image filepaths.
 
     Parameters
     ----------
@@ -322,11 +323,13 @@ def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
     n: int, optional (default: None)
         n is the size of gaussian kernel to set the size manually if wanted.
     save_intermediate: bool, optional (default: True)
-        A marker to save all high and low pass images as well as the resulting
+        A flag to save all high and low pass images as well as the resulting
         final hybrid image.
 
     Raises
     ------
+    RuntimeError
+        If the filepaths do not exist.
     ValueError
         If the input images are not the same shape.
 
@@ -350,12 +353,13 @@ def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
     _check_type(save_intermediate, bool)
 
     # Getting names from the filepaths
-    [x,y] = split(image1)
+    x, y = split(image1)
     name1 = splitext(y)[0]
 
-    [x,y] = split(image2)
+    x, y = split(image2)
     name2 = splitext(y)[0]
 
+    # Read image into array
     image1 = image_to_array(image1)
     image2 = image_to_array(image2)
 
@@ -377,7 +381,7 @@ def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
         low = low_pass(image1, sigma = low_sigma, n = n)
 
         if save_intermediate:
-            low_name = name1 + '_low_pass_sigma_' + str(low_sigma) + '.png'
+            low_name = name1 + '_low_pass_sigma_' + str(low_sigma*10) + '.png'
             low_name = join(name, low_name)
             # Save low pass image
             misc.imsave(low_name, low)
@@ -387,7 +391,7 @@ def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
             high = high_pass(image2, sigma = high_sigma, n = n)
 
             if save_intermediate:
-                high_name = name2 + '_high_pass_sigma_' + str(high_sigma) + '.png'
+                high_name = name2 + '_high_pass_sigma_' + str(high_sigma*10) + '.png'
                 high_name = join(name, high_name)
                 # Visualise the high pass better by adding 0.5
                 new_high = high.copy()
@@ -397,12 +401,12 @@ def run_hybrid(image1, image2, sigmas = [1,3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5],
 
             hybrid_image = hybrid(low, high)
 
-            hybrid_name = name1 + '_' + name2 + '_sigma_' + str(low_sigma) + '_' + str(high_sigma) + '.png'
+            hybrid_name = name1 + '_' + name2 + '_sigma_' + str(low_sigma*10) + '_' + str(high_sigma*10) + '.png'
             hybrid_name = join(name, hybrid_name)
 
             misc.imsave(hybrid_name, hybrid_image)
 
-def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
+def scale_n_images(image, n = 4, spacing = 10, name = None):
     """Creates a series of scaled versions of image each decreased by a half
 
     Parameters
@@ -413,11 +417,16 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
     n: int, optional (default: 4)
         Number of copies of image
     spacing: int, optional (default: 10)
-        Number of pixels spacing is wanted between each image
-    border: bool, optional (default: True)
-        Whether a white border is wanted all around the output image
+        Number of pixels spacing required between each image
     name: string, optional (default: None)
         Name of file if an exported image is required.
+
+    Raises
+    ------
+    RuntimeError
+        If the filepath does not exist.
+    ValueError
+
 
     Returns
     -------
@@ -439,9 +448,6 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
     # Check spacing is int
     _check_type(spacing, int)
 
-    # Check border is boolean
-    _check_type(border, bool)
-
     # Make variables for original size to be used later
     orig_height = image.shape[0]
     orig_width = image.shape[1]
@@ -456,8 +462,8 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
         sizes.append(np.power(2., -size))
 
     # These will be used later to calculate positioning of images
-    widths = np.floor(np.array(sizes)*orig_width)
-    heights = np.floor(np.array(sizes)*orig_height)
+    widths = np.round(np.array(sizes)*orig_width)
+    heights = np.round(np.array(sizes)*orig_height)
 
     arr_width = sum(widths) + (n+1)*spacing
 
@@ -511,11 +517,10 @@ def scale_n_images(image, n = 4, spacing = 10, border = True, name = None):
     return arr
 
 if __name__ == '__main__':
-    # if the command line only has two arguments then cannot run as only one
-    # image
-    if len(sys.argv) == 2:
-        raise RuntimeError("You have not provided enough arguments to run this"
-                           " script, two image filepaths are needed")
     # if the commange line has three arguments then only images have been
     # provided
     if len(sys.argv) == 3:
+        pass
+    else:
+        print("Usage: python hybrid_image.py image1 image2")
+        sys.exit()
